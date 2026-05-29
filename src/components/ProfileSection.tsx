@@ -129,27 +129,27 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
         </button>
       </div>
 
-      {/* Avatar Container with glowing rotating border */}
+      {/* Avatar Container with glowing rounded-square border */}
       <motion.div 
         className="relative group mb-6 cursor-pointer"
         whileHover={{ scale: 1.06 }}
         transition={{ type: "spring", stiffness: 250, damping: 15 }}
       >
-        <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-primary-glow rounded-full blur opacity-50 group-hover:opacity-90 group-hover:animate-spin-slow transition duration-500 animate-pulse-slow" />
-        <div className="relative w-32 h-32 rounded-full overflow-hidden p-1.5 bg-bg-base flex items-center justify-center border border-card-border/10">
+        <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-primary-glow rounded-3xl blur opacity-50 group-hover:opacity-90 group-hover:scale-105 transition-all duration-500 animate-pulse-slow" />
+        <div className="relative w-32 h-32 rounded-3xl overflow-hidden p-1 bg-bg-base flex items-center justify-center border border-card-border/10">
           {avatarUrl && !imageError ? (
             <img
               src={avatarUrl}
               alt={`${name}'s profile avatar`}
               onError={() => setImageError(true)}
-              className="w-full h-full object-cover object-top rounded-full transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover object-top rounded-2xl transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
             // Generative Premium SVG Avatar if no image
-            <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/30 to-primary-glow/30 flex items-center justify-center relative overflow-hidden text-primary">
+            <div className="w-full h-full rounded-2xl bg-gradient-to-br from-primary/30 to-primary-glow/30 flex items-center justify-center relative overflow-hidden text-primary">
               <Sparkles className="w-12 h-12 animate-float-medium" />
-              <div className="absolute w-24 h-24 rounded-full border border-primary/20 animate-spin-slow" />
-              <div className="absolute w-16 h-16 rounded-full border border-dashed border-primary-glow/20 animate-spin-slow" style={{ animationDirection: 'reverse' }} />
+              <div className="absolute w-24 h-24 rounded-2xl border border-primary/20 animate-pulse" />
+              <div className="absolute w-16 h-16 rounded-2xl border border-dashed border-primary-glow/20 animate-pulse" />
             </div>
           )}
         </div>

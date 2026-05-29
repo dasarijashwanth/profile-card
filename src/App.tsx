@@ -381,7 +381,7 @@ export const App: React.FC = () => {
       <div className="min-h-screen py-8 px-4 flex flex-col items-center select-none relative z-10">
         
         {/* Toggle Mode Top Header bar */}
-        <div className="w-full max-w-md flex justify-between items-center mb-6 glass-card p-3 rounded-2xl">
+        <div className={`w-full ${editMode ? 'max-w-5xl' : 'max-w-md'} flex justify-between items-center mb-6 glass-card p-3 rounded-2xl transition-all duration-300`}>
           <div className="flex items-center gap-1 text-primary">
             <Sparkles size={16} className="animate-spin-slow text-primary" />
             <span className="text-xs font-black tracking-tight text-text-main">
@@ -417,38 +417,67 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        <main className="w-full flex-grow flex flex-col items-center">
-          
-          {/* Profile Details Container */}
-          <ProfileSection
-            name={name}
-            verified={verified}
-            avatarUrl={`${import.meta.env.BASE_URL}profile.jpg`}
-            bios={bios}
-            totalViews={totalViews}
-            totalClicks={totalClicks}
-            soundEnabled={soundEnabled}
-            onToggleSound={handleToggleSound}
-            onOpenQR={() => setIsQRModalOpen(true)}
-            onOpenAnalytics={() => setIsAnalyticsOpen(true)}
-            onShowToast={showToast}
-          />
+        {/* Main Content Area */}
+        <main className={`w-full flex-grow flex flex-col items-center ${editMode ? 'max-w-5xl' : 'max-w-md'} transition-all duration-300`}>
+          {!editMode ? (
+            /* VIEW MODE: Standard Centered Column */
+            <div className="w-full flex flex-col items-center">
+              {/* Profile Details Container */}
+              <ProfileSection
+                name={name}
+                verified={verified}
+                avatarUrl={`${import.meta.env.BASE_URL}profile.jpg`}
+                bios={bios}
+                totalViews={totalViews}
+                totalClicks={totalClicks}
+                soundEnabled={soundEnabled}
+                onToggleSound={handleToggleSound}
+                onOpenQR={() => setIsQRModalOpen(true)}
+                onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+                onShowToast={showToast}
+              />
 
-          {/* Theme customizer overlay (shows when Edit Mode is active) */}
-          <AnimatePresence>
-            {editMode && (
+              {/* Social Links Cards Wrapper */}
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="w-full overflow-hidden"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="w-full px-2"
               >
-                {/* 2. Theme Customizer Panel */}
+                {links.length === 0 ? (
+                  <div className="text-center py-12 glass-card rounded-2xl max-w-md mx-auto">
+                    <p className="text-sm text-text-muted italic">
+                      Link list is currently empty. Toggle "Edit Links" above to build your profile card!
+                    </p>
+                  </div>
+                ) : (
+                  links.map((link, idx) => (
+                    <SocialLinkCard
+                      key={link.id}
+                      link={link}
+                      index={idx}
+                      dragIndex={draggedIndex}
+                      onDragStart={handleDragStart}
+                      onDragEnter={handleDragEnter}
+                      onDragEnd={handleDragEnd}
+                      onLinkClick={handleLinkClick}
+                      onDeleteLink={handleDeleteLink}
+                      editMode={false}
+                    />
+                  ))
+                )}
+              </motion.div>
+            </div>
+          ) : (
+            /* EDIT MODE: Side-by-Side Split Dashboard (Controls Left, Live iPhone Mockup Right) */
+            <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-8 text-left items-start">
+              {/* Left Side: Editor Control Panel (7/12 width) */}
+              <div className="md:col-span-7 space-y-6">
+                {/* 1. Theme Customizer Panel */}
                 <ThemeCustomizer config={themeConfig} onChange={setThemeConfig} />
 
-                {/* 3. Profile Editor Dashboard Panel */}
-                <div className="w-full max-w-md mx-auto glass-card p-5 rounded-3xl mb-6 relative">
+                {/* 2. Profile Editor Dashboard Panel */}
+                <div className="w-full glass-card p-5 rounded-3xl relative">
                   <button 
                     type="button"
                     onClick={() => {
@@ -524,8 +553,8 @@ export const App: React.FC = () => {
                   </AnimatePresence>
                 </div>
 
-                {/* 4. Link Cards Editor Form */}
-                <div className="w-full max-w-md mx-auto glass-card p-5 rounded-3xl mb-6 relative">
+                {/* 3. Link Cards Editor Form */}
+                <div className="w-full glass-card p-5 rounded-3xl relative">
                   <button 
                     type="button"
                     onClick={() => {
@@ -597,54 +626,107 @@ export const App: React.FC = () => {
                     )}
                   </AnimatePresence>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
-          {/* Social Links Cards Wrapper */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="w-full px-2"
-          >
-            {links.length === 0 ? (
-              <div className="text-center py-12 glass-card rounded-2xl max-w-md mx-auto">
-                <p className="text-sm text-text-muted italic">
-                  Link list is currently empty. Toggle "Edit Links" above to build your profile card!
-                </p>
+                {/* 4. Link Reordering List (Only visible in edit panel for mobile/tablet, as desktop uses the live phone mockup or handles edits here) */}
+                <div className="w-full glass-card p-5 rounded-3xl relative">
+                  <div className="text-xs font-bold text-text-main mb-4 flex items-center gap-2">
+                    <Edit3 size={14} className="text-primary" />
+                    <span>Manage & Reorder Links ({links.length})</span>
+                  </div>
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-1"
+                  >
+                    {links.length === 0 ? (
+                      <p className="text-xs text-text-muted italic text-center py-4">No links added yet.</p>
+                    ) : (
+                      links.map((link, idx) => (
+                        <SocialLinkCard
+                          key={`editor_${link.id}`}
+                          link={link}
+                          index={idx}
+                          dragIndex={draggedIndex}
+                          onDragStart={handleDragStart}
+                          onDragEnter={handleDragEnter}
+                          onDragEnd={handleDragEnd}
+                          onLinkClick={handleLinkClick}
+                          onDeleteLink={handleDeleteLink}
+                          editMode={true}
+                        />
+                      ))
+                    )}
+                  </motion.div>
+                </div>
+
+                {/* 5. Reset Action Panel */}
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={handleResetData}
+                    className="flex items-center gap-1.5 text-xs font-bold text-red-500/80 hover:text-red-500 cursor-pointer select-none"
+                  >
+                    <RefreshCw size={12} />
+                    <span>Reset Profile Data</span>
+                  </button>
+                </div>
               </div>
-            ) : (
-              links.map((link, idx) => (
-                <SocialLinkCard
-                  key={link.id}
-                  link={link}
-                  index={idx}
-                  dragIndex={draggedIndex}
-                  onDragStart={handleDragStart}
-                  onDragEnter={handleDragEnter}
-                  onDragEnd={handleDragEnd}
-                  onLinkClick={handleLinkClick}
-                  onDeleteLink={handleDeleteLink}
-                  editMode={editMode}
-                />
-              ))
-            )}
-          </motion.div>
 
-          {/* Reset Action Panel (Only in Edit mode) */}
-          {editMode && (
-            <div className="mt-4 mb-6">
-              <button
-                onClick={handleResetData}
-                className="flex items-center gap-1.5 text-xs font-bold text-red-500/80 hover:text-red-500 cursor-pointer select-none"
-              >
-                <RefreshCw size={12} />
-                <span>Reset Profile Data</span>
-              </button>
+              {/* Right Side: Sticky Live Mobile Mockup Preview (5/12 width) - Hidden on Mobile, Visible on Desktop/Laptops */}
+              <div className="md:col-span-5 hidden md:block">
+                <div className="sticky top-8 flex flex-col items-center">
+                  <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-3 self-start flex items-center gap-1.5 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span>Live Device Mockup Preview</span>
+                  </div>
+                  
+                  {/* Smartphone Frame Mockup */}
+                  <div className="relative w-[335px] h-[645px] rounded-[50px] border-[12px] border-slate-900 bg-bg-base shadow-[0_30px_70px_-10px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col p-1 ring-4 ring-slate-800/10">
+                    {/* Speaker Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20 flex items-center justify-center">
+                      <div className="w-10 h-1.5 bg-slate-800 rounded-full mb-1" />
+                    </div>
+
+                    {/* Camera lens indicator inside notch */}
+                    <div className="absolute top-1.5 right-[38%] w-2.5 h-2.5 rounded-full bg-slate-950/40 z-20" />
+                    
+                    {/* Phone Screen Viewport */}
+                    <div className="w-full h-full rounded-[38px] overflow-y-auto overflow-x-hidden relative flex flex-col px-3 pt-6 pb-4 bg-grid-pattern">
+                      <ProfileSection
+                        name={name}
+                        verified={verified}
+                        avatarUrl={`${import.meta.env.BASE_URL}profile.jpg`}
+                        bios={bios}
+                        totalViews={totalViews}
+                        totalClicks={totalClicks}
+                        soundEnabled={soundEnabled}
+                        onToggleSound={handleToggleSound}
+                        onOpenQR={() => setIsQRModalOpen(true)}
+                        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+                        onShowToast={showToast}
+                      />
+                      <div className="w-full px-1">
+                        {links.map((link, idx) => (
+                          <SocialLinkCard
+                            key={`preview_${link.id}`}
+                            link={link}
+                            index={idx}
+                            dragIndex={draggedIndex}
+                            onDragStart={handleDragStart}
+                            onDragEnter={handleDragEnter}
+                            onDragEnd={handleDragEnd}
+                            onLinkClick={handleLinkClick}
+                            onDeleteLink={handleDeleteLink}
+                            editMode={false} // Clickable inside mockup
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-
         </main>
 
         {/* Footer info */}

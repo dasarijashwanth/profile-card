@@ -59,6 +59,29 @@ const PLATFORMS = [
   { id: 'email', name: 'Email Address' }
 ];
 
+// Helper utility to update and retrieve real-time global analytics from Abacus API
+const fetchGlobalCounter = async (action: 'get' | 'hit', key: 'views' | 'clicks'): Promise<number> => {
+  try {
+    const res = await fetch(`https://abacus.jasoncameron.dev/${action}/jashwanth_dasari_profile_card/${key}`);
+    if (!res.ok) throw new Error("Abacus API response error");
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      if (typeof data.value === 'number') return data.value;
+      if (typeof data.count === 'number') return data.count;
+      if (typeof data === 'number') return data;
+    } catch {
+      const num = parseInt(text.trim());
+      if (!isNaN(num)) return num;
+    }
+    throw new Error("Invalid count response format");
+  } catch (err) {
+    console.error(`Failed to execute ${action} on global counter ${key}:`, err);
+    const localVal = localStorage.getItem(`profile_${key}`);
+    return localVal ? parseInt(localVal) : (key === 'views' ? 1 : 0);
+  }
+};
+
 export const App: React.FC = () => {
   // --- Loading Screen State ---
   const [loading, setLoading] = useState(true);
@@ -178,15 +201,23 @@ export const App: React.FC = () => {
     }
     if (savedTheme) setThemeConfig(JSON.parse(savedTheme));
 
-    // Simulate page view increment once per session load
-    setTimeout(() => {
-      setTotalViews(prev => {
-        const next = prev + 1;
-        localStorage.setItem('profile_views', next.toString());
-        return next;
-      });
-      setLoading(false);
-    }, 1600);
+    // Fetch and increment global counters in real-time
+    const loadGlobalStats = async () => {
+      // 1. Increment and get global views
+      const views = await fetchGlobalCounter('hit', 'views');
+      setTotalViews(views);
+      localStorage.setItem('profile_views', views.toString());
+
+      // 2. Get current global clicks
+      const clicks = await fetchGlobalCounter('get', 'clicks');
+      setTotalClicks(clicks);
+      localStorage.setItem('profile_clicks', clicks.toString());
+    };
+
+    loadGlobalStats().finally(() => {
+      // Ensure smooth loading screen transition
+      setTimeout(() => setLoading(false), 800);
+    });
   }, []);
 
   // --- Theme Application Effect ---
@@ -229,11 +260,10 @@ export const App: React.FC = () => {
     setLinks(updatedLinks);
     localStorage.setItem('profile_links', JSON.stringify(updatedLinks));
 
-    // Increment overall analytics
-    setTotalClicks(prev => {
-      const next = prev + 1;
-      localStorage.setItem('profile_clicks', next.toString());
-      return next;
+    // Increment overall analytics globally in real-time
+    fetchGlobalCounter('hit', 'clicks').then(clicks => {
+      setTotalClicks(clicks);
+      localStorage.setItem('profile_clicks', clicks.toString());
     });
   };
 

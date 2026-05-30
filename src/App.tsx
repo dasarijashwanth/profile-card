@@ -395,7 +395,7 @@ export const App: React.FC = () => {
                 transition={{ delay: 0.4 }}
                 className="mt-6 text-sm font-semibold tracking-wider uppercase text-text-muted font-mono"
               >
-                Configuring Link Matrix...
+                Loading Jashu's Profile...
               </motion.span>
             </div>
           </motion.div>
